@@ -298,13 +298,6 @@ with st.sidebar:
                   type="primary" if is_active else "secondary",
                   on_click=set_menu, args=(key,))
 
-    st.markdown("""
-    <div style="height:1px;background:rgba(255,255,255,0.2);margin:14px 0 10px 0;"></div>
-    <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);text-align:center;">
-        Data Mining · SI4802<br>Kelompok 6 · 2026
-    </div>
-    """, unsafe_allow_html=True)
-
 # ── hide default streamlit button styles, keep only our sidebar buttons custom ──
 st.markdown("""
 <style>
