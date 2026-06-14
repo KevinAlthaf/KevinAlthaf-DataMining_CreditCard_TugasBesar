@@ -321,10 +321,10 @@ st.markdown("""
     transform: translateX(3px) !important;
 }
 [data-testid="stSidebar"] .stButton button[kind="primary"] {
-    background: #000000 !important;
-    color: #ffffff !important;
+    background: rgb(14, 17, 23) !important;
+    color: #1a237e !important;
     font-weight: 700 !important;
-    border: 2px solid rgba(255,255,255,0.4) !important;
+    border: 2px solid #222222 !important;
     box-shadow: 0 4px 14px rgba(0,0,0,0.3) !important;
     transform: scale(1.02) !important;
 }
