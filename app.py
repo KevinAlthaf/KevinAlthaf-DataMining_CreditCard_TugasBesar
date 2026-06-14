@@ -1,4 +1,5 @@
 
+
 from sklearn.metrics import (
     accuracy_score, classification_report,
     confusion_matrix, roc_curve, auc
@@ -109,6 +110,14 @@ st.markdown("""
 def load_data():
     df = pd.read_csv('CC GENERAL.csv')
     return df
+
+# ---> TAMBAHKAN FUNGSI INI <---
+@st.cache_resource
+def load_simulation_models():
+    scaler = joblib.load('scaler.pkl')
+    logreg = joblib.load('logreg_model.pkl')
+    gnb = joblib.load('gnb_model.pkl')
+    return scaler, logreg, gnb
 
 
 @st.cache_data
@@ -279,10 +288,15 @@ with st.sidebar:
             </form>
         </div>
         """, unsafe_allow_html=True)
-        if st.button(f"{icon}  {label}", key=f"nav_{key}", use_container_width=True,
-                     type="primary" if is_active else "secondary"):
-            st.session_state.active_menu = key
-            st.rerun()
+       # Buat fungsi callback kecil untuk perpindahan state
+
+        def set_menu(menu_name):
+            st.session_state.active_menu = menu_name
+
+        # Tombol direvisi menggunakan on_click
+        st.button(f"{icon}  {label}", key=f"nav_{key}", use_container_width=True,
+                  type="primary" if is_active else "secondary",
+                  on_click=set_menu, args=(key,))
 
 # ── hide default streamlit button styles, keep only our sidebar buttons custom ──
 st.markdown("""
@@ -307,11 +321,11 @@ st.markdown("""
     transform: translateX(3px) !important;
 }
 [data-testid="stSidebar"] .stButton button[kind="primary"] {
-    background: #222222 !important;
-    color: #1a237e !important;
+    background: #000000 !important;
+    color: #ffffff !important;
     font-weight: 700 !important;
-    border: 2px solid rgb(14, 17, 23) !important;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.2) !important;
+    border: 2px solid rgba(255,255,255,0.4) !important;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3) !important;
     transform: scale(1.02) !important;
 }
 /* hide the HTML form buttons — only real st.button used */
@@ -598,6 +612,43 @@ elif menu == "EDA & Preparation":
     # ── Distribusi Histogram ──
     with tab_hist:
         st.subheader("Distribusi Setiap Fitur (Histogram)")
+
+        # ── Insight di atas histogram ──
+        st.markdown("""
+        Histogram berikut menunjukkan **sebaran nilai setiap fitur** setelah proses preprocessing (IQR Capping).
+        Beberapa pola penting yang dapat dibaca:
+        """)
+
+        col_ins1, col_ins2, col_ins3 = st.columns(3)
+        with col_ins1:
+            with st.container(border=True):
+                st.markdown("**📉 Right-Skewed (Miring Kanan)**")
+                st.markdown(
+                    "**BALANCE**, **PURCHASES**, **CASH_ADVANCE**, **ONEOFF_PURCHASES**, "
+                    "**INSTALLMENTS_PURCHASES**, **PAYMENTS**, dan **MINIMUM_PAYMENTS** "
+                    "memiliki distribusi yang sangat miring ke kanan — artinya **mayoritas nasabah memiliki nilai rendah**, "
+                    "namun ada sebagian kecil nasabah dengan nilai sangat tinggi."
+                )
+        with col_ins2:
+            with st.container(border=True):
+                st.markdown("**📊 Distribusi Bimodal / Terpolar**")
+                st.markdown(
+                    "**PURCHASES_FREQUENCY**, **ONEOFF_PURCHASES_FREQUENCY**, dan "
+                    "**PURCHASES_INSTALLMENTS_FREQUENCY** memiliki distribusi bimodal — "
+                    "banyak nasabah yang **tidak pernah** (nilai ≈ 0) atau **selalu** (nilai ≈ 1) melakukan "
+                    "transaksi, sangat sedikit di tengah."
+                )
+        with col_ins3:
+            with st.container(border=True):
+                st.markdown("**📌 Distribusi Terkonsentrasi**")
+                st.markdown(
+                    "**BALANCE_FREQUENCY** dan **TENURE** menunjukkan konsentrasi tinggi di nilai maksimum — "
+                    "sebagian besar nasabah memiliki frekuensi saldo yang sering diperbarui dan sudah menjadi "
+                    "nasabah selama **12 bulan penuh** (nilai TENURE = 12 mendominasi)."
+                )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
         fig_hist, axes_hist = plt.subplots(4, 5, figsize=(20, 14))
         axes_hist = axes_hist.flatten()
         cols = df_clean.columns.tolist()
@@ -607,7 +658,6 @@ elif menu == "EDA & Preparation":
             axes_hist[i].set_title(col, fontsize=9, fontweight='bold')
             axes_hist[i].set_xlabel('')
             axes_hist[i].tick_params(labelsize=7)
-        # Sembunyikan subplot kosong
         for j in range(len(cols), len(axes_hist)):
             fig_hist.delaxes(axes_hist[j])
         plt.suptitle('Distribusi Semua Fitur (Setelah Preprocessing)',
@@ -618,6 +668,45 @@ elif menu == "EDA & Preparation":
     # ── Heatmap Korelasi ──
     with tab_corr:
         st.subheader("Heatmap Korelasi Antar Fitur")
+
+        # ── Insight di atas heatmap ──
+        st.markdown("""
+        Heatmap berikut menunjukkan **korelasi Pearson** antar fitur setelah preprocessing.
+        Nilai korelasi berkisar antara **-1** (korelasi negatif sempurna) hingga **+1** (korelasi positif sempurna).
+        Semakin gelap warna birunya, semakin kuat hubungannya.
+        """)
+
+        col_c1, col_c2 = st.columns(2)
+        with col_c1:
+            with st.container(border=True):
+                st.markdown("**🔗 Korelasi Positif Kuat (r > 0.5)**")
+                st.markdown("""
+- **PURCHASES ↔ ONEOFF_PURCHASES** — sangat kuat, karena pembelian sekali bayar mendominasi total pembelian nasabah
+- **PURCHASES ↔ PURCHASES_TRX** — semakin sering bertransaksi, total pembelian semakin besar
+- **PURCHASES ↔ PURCHASES_FREQUENCY** — nasabah yang sering beli otomatis nilai pembeliannya tinggi
+- **CASH_ADVANCE ↔ CASH_ADVANCE_TRX** — semakin sering tarik tunai, totalnya semakin besar
+- **CASH_ADVANCE ↔ CASH_ADVANCE_FREQUENCY** — pola konsisten pada pengguna cash advance aktif
+- **PURCHASES_FREQUENCY ↔ PURCHASES_INSTALLMENTS_FREQUENCY** — nasabah yang sering beli cenderung memilih cicilan
+                """)
+        with col_c2:
+            with st.container(border=True):
+                st.markdown("**⚠️ Fitur yang Hampir Tidak Berkorelasi**")
+                st.markdown("""
+- **TENURE** — hampir tidak berkorelasi dengan fitur manapun, menunjukkan lama menjadi nasabah tidak menentukan pola transaksinya
+- **PRC_FULL_PAYMENT** — korelasi sangat rendah dengan fitur lain, artinya kebiasaan bayar penuh tidak bisa diprediksi dari fitur transaksi lainnya
+- **CASH_ADVANCE ↔ PURCHASES** — mendekati nol, membuktikan nasabah yang tarik tunai cenderung tidak berbelanja, dan sebaliknya — ini menjadi dasar pemisahan 2 cluster
+                """)
+
+        with st.container(border=True):
+            st.markdown("**✅ Implikasi untuk Clustering**")
+            st.markdown(
+                "Pola korelasi ini mengkonfirmasi bahwa data memiliki **dua kelompok perilaku yang berbeda**: "
+                "nasabah berbasis pembelian dan nasabah berbasis penarikan tunai — yang menjadi fondasi "
+                "pemilihan **k=2 pada K-Means Clustering**."
+            )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
         fig_corr, ax_corr = plt.subplots(figsize=(14, 10))
         corr_matrix = df_clean.corr()
         mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
@@ -717,7 +806,7 @@ elif menu == "Clustering":
         df_eval = df_eval.set_index('k')
 
         def highlight_k2(row):
-            return ['background-color: #fff9c4; font-weight: bold'] * len(row) if row.name == 2 else [''] * len(row)
+            return ['background-color: #1565c0; color: #ffffff; font-weight: bold'] * len(row) if row.name == 2 else [''] * len(row)
 
         st.dataframe(
             df_eval.style.apply(highlight_k2, axis=1).format('{:.4f}'),
@@ -926,9 +1015,8 @@ elif menu == "Simulasi Prediksi":
         "Masukkan data nasabah baru di bawah ini, lalu klik **Prediksi** untuk mengetahui segmen nasabah tersebut.")
 
     try:
-        scaler_sim = joblib.load('scaler.pkl')
-        logreg_sim = joblib.load('logreg_model.pkl')
-        gnb_sim = joblib.load('gnb_model.pkl')
+        # Memanggil cache model yang sudah disiapkan di atas
+        scaler_sim, logreg_sim, gnb_sim = load_simulation_models()
     except FileNotFoundError as e:
         st.error(
             f"❌ File model tidak ditemukan: {e}. Pastikan `scaler.pkl`, `logreg_model.pkl`, dan `gnb_model.pkl` ada di folder yang sama.")
