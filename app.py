@@ -284,13 +284,6 @@ with st.sidebar:
             st.session_state.active_menu = key
             st.rerun()
 
-    st.markdown("""
-    <div style="height:1px;background:rgba(255,255,255,0.2);margin:14px 0 10px 0;"></div>
-    <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);text-align:center;">
-        Data Mining · SI4802<br>Kelompok 6 · 2026
-    </div>
-    """, unsafe_allow_html=True)
-
 # ── hide default streamlit button styles, keep only our sidebar buttons custom ──
 st.markdown("""
 <style>
@@ -314,10 +307,10 @@ st.markdown("""
     transform: translateX(3px) !important;
 }
 [data-testid="stSidebar"] .stButton button[kind="primary"] {
-    background: rgba(255,255,255,0.92) !important;
+    background: #222222 !important;
     color: #1a237e !important;
     font-weight: 700 !important;
-    border: 2px solid white !important;
+    border: 2px solid rgb(14, 17, 23) !important;
     box-shadow: 0 4px 14px rgba(0,0,0,0.2) !important;
     transform: scale(1.02) !important;
 }
