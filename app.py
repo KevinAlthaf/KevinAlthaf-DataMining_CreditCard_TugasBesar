@@ -189,16 +189,16 @@ def run_models(_df_clean):
 
     # GridSearchCV Logistic Regression
     param_grid_lr = {
-        'C':       [0.01, 0.1, 1, 10],
-        'solver':  ['lbfgs', 'liblinear'],
-        'max_iter': [200, 500]
+        'C': [0.001, 0.01, 0.1, 1, 10, 100],
+        'penalty': ['l1', 'l2'],
+        'solver': ['liblinear', 'saga']
     }
     gs_lr = GridSearchCV(LogisticRegression(), param_grid_lr,
                          cv=5, scoring='accuracy', n_jobs=-1)
     gs_lr.fit(X_train_sc, y_train)
 
     # GridSearchCV Naive Bayes
-    param_grid_gnb = {'var_smoothing': np.logspace(-12, -1, 20)}
+    param_grid_gnb = {'var_smoothing': np.logspace(0, -9, num=100)}
     gs_gnb = GridSearchCV(GaussianNB(), param_grid_gnb,
                           cv=5, scoring='accuracy', n_jobs=-1)
     gs_gnb.fit(X_train_sc, y_train)
