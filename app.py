@@ -80,14 +80,14 @@ st.markdown("""
     }
     /* Cluster card */
     .cluster-card-0 {
-        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+        background: linear-gradient(135deg, #2e7d32, #c8e6c9);
         border-left: 5px solid #2e7d32;
         border-radius: 10px;
         padding: 16px 20px;
         margin-bottom: 12px;
     }
     .cluster-card-1 {
-        background: linear-gradient(135deg, #fce4ec, #f8bbd0);
+        background: linear-gradient(135deg, #c62828, #f8bbd0);
         border-left: 5px solid #c62828;
         border-radius: 10px;
         padding: 16px 20px;
